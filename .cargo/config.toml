@@ -1,0 +1,51 @@
+# Faster linker configuration.
+#
+# Source: https://github.com/TheBevyFlock/bevy_new_2d/blob/main/.cargo/config_fast_builds.toml
+#
+# This project builds on `stable`, so the nightly-only options (the `cranelift`
+# codegen backend, `-Zshare-generics`, `-Zthreads`) are left out. If you switch
+# to a nightly toolchain, consult the source above for extra speedups.
+#
+# Linking is one of the slowest parts of compiling large Rust programs. This
+# file configures an alternate linker per platform:
+#
+# - Linux: `clang` driving the Mold linker (best performance; https://github.com/rui314/mold)
+# - Windows: `rust-lld` (ships with Rust; no install needed)
+# - macOS: the default `ld64` linker is already the fastest option there
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = [
+  # You may need to install these:
+  # - Ubuntu: `sudo apt-get install mold clang`
+  # - Fedora: `sudo dnf install mold clang`
+  # - Arch: `sudo pacman -S mold clang`
+  "-Clink-arg=-fuse-ld=/usr/bin/mold",
+]
+
+[target.aarch64-unknown-linux-gnu]
+linker = "clang"
+rustflags = [
+  # You may need to install these:
+  # - Ubuntu: `sudo apt-get install mold clang`
+  # - Fedora: `sudo dnf install mold clang`
+  # - Arch: `sudo pacman -S mold clang`
+  "-Clink-arg=-fuse-ld=/usr/bin/mold",
+]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+  # The default ld64 linker is faster than LLD on macOS, keep using it.
+]
+
+[target.aarch64-apple-darwin]
+rustflags = [
+  # The default ld64 linker is faster than LLD on macOS, keep using it.
+]
+
+[target.x86_64-pc-windows-msvc]
+# LLD linker
+#
+# You don't need to install anything; `rust-lld` ships with Rust.
+linker = "rust-lld.exe"
+rustdocflags = ["-Clinker=rust-lld.exe"]
