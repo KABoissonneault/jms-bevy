@@ -5,4 +5,3 @@
 - Tech design documents are found under `**/doc/vault/jms/Tech Design` as *.md files
 - Code is found under "src"
 - Changes are only under "src" unless requested elsewhere
-- Changes should be committed to a separate branch and sent as a pull request to main
