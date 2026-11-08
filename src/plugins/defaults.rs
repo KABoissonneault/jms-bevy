@@ -1,11 +1,10 @@
+use crate::styles::colors;
 use bevy::{asset::AssetMetaCheck, prelude::*};
-
-const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 
 // Sets up the default plugins like windows, assets, etc
 
 pub(crate) fn plugin(app: &mut App) {
-    app.insert_resource(ClearColor(BACKGROUND_COLOR))
+    app.insert_resource(ClearColor(colors::TITLE_BACKGROUND.into()))
         .add_plugins(
             DefaultPlugins
                 .set(AssetPlugin {

@@ -22,4 +22,7 @@ pub mod colors {
     pub const WARNING_CONTENT: Srgba = tailwind::YELLOW_100;
     pub const ERROR: Srgba = tailwind::RED_500;
     pub const ERROR_CONTENT: Srgba = tailwind::RED_100;
+
+    pub const TITLE_BACKGROUND: Srgba = Srgba::rgb(0.06, 0.10, 0.12);
+    pub const TITLE_TEXT: Srgba = Srgba::rgb(0.92, 0.91, 0.85);
 }
