@@ -17,6 +17,12 @@ bevy = { version = "0.20", default-features = false, features = [
   "x11",
 ] }
 
+# In-game diagnostics window for dev builds. See `src/plugins/debug.rs`.
+bevy_egui = { version = "0.43", optional = true, default-features = false, features = [
+  "render",
+  "default_fonts",
+] }
+
 log = { version = "*", features = ["max_level_debug", "release_max_level_error"] }
 # Compile low-severity logs out of web builds for performance.
 tracing = { version = "0.1", features = ["max_level_debug", "release_max_level_warn"] }
@@ -34,6 +40,8 @@ dev_native = [
   "bevy/embedded_watcher",
 ]
 dev = [
+  # In-game diagnostics window (egui), toggled with F1.
+  "dep:bevy_egui",
   # Improve compile times for dev builds by linking Bevy as a dynamic library.
   "bevy/dynamic_linking",
   "bevy/bevy_dev_tools",
