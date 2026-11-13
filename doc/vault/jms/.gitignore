@@ -1,6 +1,15 @@
 # Obsidian vault configuration
 
+# Local-only state: machine-specific and constantly changing
 .obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/app.json
+.obsidian/graph.json
+
+# Community plugin settings are personal; plugin code (main.js, manifest.json,
+# styles.css) stays tracked for syncing across clones
+.obsidian/plugins/*/data.json
 
 # Obsidian vault trash
 .trash
