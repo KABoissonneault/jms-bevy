@@ -25,6 +25,7 @@ impl Plugin for AppPlugin {
             plugins::defaults::plugin,
             plugins::game::plugin,
             plugins::input::plugin,
+            plugins::tiling::plugin,
         ));
 
         // Enable dev tools for dev builds.

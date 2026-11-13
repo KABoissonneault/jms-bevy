@@ -1,0 +1,773 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1523.7382"
+   height="908.47375"
+   viewBox="0 0 1523.7382 908.47375"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="hex-tiling-unit.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showguides="true"
+     inkscape:zoom="0.96326671"
+     inkscape:cx="620.28511"
+     inkscape:cy="134.43836"
+     inkscape:window-width="1920"
+     inkscape:window-height="1016"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="hexunit" />
+  <title
+     id="title1">Hex tiling unit (flat-top, side 50) - Tiled Clones: Shift X 150.000, Shift Y 86.603</title>
+  <g
+     id="hexunit"
+     fill="none"
+     stroke="#000000"
+     stroke-width="1"
+     inkscape:tile-cx="112.5"
+     inkscape:tile-cy="64.952"
+     inkscape:tile-w="176.1547"
+     inkscape:tile-h="130.904"
+     inkscape:tile-x0="24.42265"
+     inkscape:tile-y0="-0.5"
+     transform="translate(-24.42265,0.5)">
+    <polygon
+       id="hex-b"
+       points="125,129.904 100,86.603 125,43.301 175,43.301 200,86.603 175,129.904 " />
+    <polygon
+       id="hex-a"
+       points="50,86.603 25,43.301 50,0 100,0 125,43.301 100,86.603 " />
+  </g>
+  <g
+     id="g1373"
+     transform="translate(-24.42265,0.5)">
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       id="use1274"
+       transform="translate(24.42265,-0.5)" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,85.89664)"
+       id="use1275" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,172.29328)"
+       id="use1276" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,258.68992)"
+       id="use1277" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,345.08656)"
+       id="use1278" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,431.4832)"
+       id="use1279" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,517.87984)"
+       id="use1280" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,604.27648)"
+       id="use1281" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,690.67312)"
+       id="use1282" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(24.42265,777.06976)"
+       id="use1283" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,-0.5)"
+       id="use1284" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,85.89664)"
+       id="use1285" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,172.29328)"
+       id="use1286" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,258.68992)"
+       id="use1287" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,345.08656)"
+       id="use1288" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,431.4832)"
+       id="use1289" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,517.87984)"
+       id="use1290" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,604.27648)"
+       id="use1291" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,690.67312)"
+       id="use1292" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(174.15414,777.06976)"
+       id="use1293" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,-0.5)"
+       id="use1294" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,85.89664)"
+       id="use1295" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,172.29328)"
+       id="use1296" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,258.68992)"
+       id="use1297" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,345.08656)"
+       id="use1298" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,431.4832)"
+       id="use1299" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,517.87984)"
+       id="use1300" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,604.27648)"
+       id="use1301" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,690.67312)"
+       id="use1302" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(323.88564,777.06976)"
+       id="use1303" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,-0.5)"
+       id="use1304" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,85.89664)"
+       id="use1305" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,172.29328)"
+       id="use1306" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,258.68992)"
+       id="use1307" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,345.08656)"
+       id="use1308" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,431.4832)"
+       id="use1309" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,517.87984)"
+       id="use1310" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,604.27648)"
+       id="use1311" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,690.67312)"
+       id="use1312" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(473.61713,777.06976)"
+       id="use1313" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,-0.5)"
+       id="use1314" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,85.89664)"
+       id="use1315" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,172.29328)"
+       id="use1316" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,258.68992)"
+       id="use1317" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,345.08656)"
+       id="use1318" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,431.4832)"
+       id="use1319" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,517.87984)"
+       id="use1320" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,604.27648)"
+       id="use1321" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,690.67312)"
+       id="use1322" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(623.34863,777.06976)"
+       id="use1323" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,-0.5)"
+       id="use1324" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,85.89664)"
+       id="use1325" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,172.29328)"
+       id="use1326" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,258.68992)"
+       id="use1327" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,345.08656)"
+       id="use1328" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,431.4832)"
+       id="use1329" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,517.87984)"
+       id="use1330" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,604.27648)"
+       id="use1331" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,690.67312)"
+       id="use1332" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(773.08012,777.06976)"
+       id="use1333" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,-0.5)"
+       id="use1334" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,85.89664)"
+       id="use1335" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,172.29328)"
+       id="use1336" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,258.68992)"
+       id="use1337" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,345.08656)"
+       id="use1338" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,431.4832)"
+       id="use1339" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,517.87984)"
+       id="use1340" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,604.27648)"
+       id="use1341" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,690.67312)"
+       id="use1342" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(922.81162,777.06976)"
+       id="use1343" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,-0.5)"
+       id="use1344" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,85.89664)"
+       id="use1345" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,172.29328)"
+       id="use1346" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,258.68992)"
+       id="use1347" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,345.08656)"
+       id="use1348" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,431.4832)"
+       id="use1349" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,517.87984)"
+       id="use1350" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,604.27648)"
+       id="use1351" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,690.67312)"
+       id="use1352" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1072.5432,777.06976)"
+       id="use1353" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,-0.5)"
+       id="use1354" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,85.89664)"
+       id="use1355" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,172.29328)"
+       id="use1356" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,258.68992)"
+       id="use1357" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,345.08656)"
+       id="use1358" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,431.4832)"
+       id="use1359" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,517.87984)"
+       id="use1360" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,604.27648)"
+       id="use1361" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,690.67312)"
+       id="use1362" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1222.2747,777.06976)"
+       id="use1363" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,-0.5)"
+       id="use1364" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,85.89664)"
+       id="use1365" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,172.29328)"
+       id="use1366" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,258.68992)"
+       id="use1367" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,345.08656)"
+       id="use1368" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,431.4832)"
+       id="use1369" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,517.87984)"
+       id="use1370" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,604.27648)"
+       id="use1371" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,690.67312)"
+       id="use1372" />
+    <use
+       x="0"
+       y="0"
+       inkscape:tiled-clone-of="#hexunit"
+       xlink:href="#hexunit"
+       transform="translate(1372.0062,777.06976)"
+       id="use1373" />
+  </g>
+  <metadata
+     id="metadata1373">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Hex tiling unit (flat-top, side 50) - Tiled Clones: Shift X 150.000, Shift Y 86.603</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>
