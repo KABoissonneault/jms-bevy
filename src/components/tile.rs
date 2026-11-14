@@ -16,7 +16,7 @@ pub const DX_PX: f32 = HEX_WIDTH / 4.0;
 /// The dy unit: smallest y delta, a quarter of [`HEX_HEIGHT`].
 pub const DY_PX: f32 = HEX_HEIGHT / 4.0;
 /// Pixel distance between hex grid layers (`S`).
-pub const LAYER_STEP_Z: f32 = 12.0;
+pub const LAYER_STEP_Z: f32 = 11.0;
 
 // Steps between neighboring grid positions, in dx/dy units.
 
@@ -51,6 +51,11 @@ impl HexPos {
     /// straight to the next row.
     pub const fn from_grid(col: i32, row: i32) -> Self {
         Self::new(COLUMN_DX * col, ROW_DY * row + COLUMN_DY * (col & 1), 0)
+    }
+
+    /// Returns this position moved to the hex grid layer `z`.
+    pub const fn at_layer(self, z: i32) -> Self {
+        Self::new(self.x, self.y, z)
     }
 
     /// Pixel position of this coordinate in the world, with x increasing to
@@ -96,6 +101,11 @@ mod tests {
             HexPos::from_grid(2, 1),
             HexPos::new(2 * COLUMN_DX, ROW_DY, 0)
         );
+    }
+
+    #[test]
+    fn at_layer_moves_between_layers() {
+        assert_eq!(HexPos::new(1, 2, 0).at_layer(-1), HexPos::new(1, 2, -1));
     }
 
     #[test]
