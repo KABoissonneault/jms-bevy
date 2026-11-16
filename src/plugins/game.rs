@@ -2,6 +2,7 @@
 
 use bevy::{app::App, prelude::*, sprite::Anchor};
 
+use crate::plugins::camera::BACKGROUND;
 use crate::styles::colors;
 
 // This is an example of the most simple plugin you can write, without
@@ -22,5 +23,6 @@ fn spawn_title(mut commands: Commands) {
         TextColor(colors::TITLE_TEXT.into()),
         TextLayout::justify(Justify::Center),
         Anchor::CENTER,
+        BACKGROUND,
     ));
 }
