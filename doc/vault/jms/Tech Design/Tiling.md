@@ -42,11 +42,11 @@ Scenery will often include a floor, which may have a visible foundation below. T
 
 Other scenery elements may be attached to the center of the tile, the edges, and the vertices. An attachment in the center of the hexagon is part of the floor: if entity can also occupy the same hexagon, it renders under them. Attachments on the bottom three edges or bottom two vertices render in front of entities on the hexagon, attachments on the top three edges or two top vertices render behind entities on the hexagon. Other scenarios are undefined, and should probably be avoided through game constraints or limitations, or else rendering may be non-deterministic.
 
-In rendering order for a single z-layer, we get:
+A tile can have all of the following:
 - Floors
 - Top attachments (top edge and two top vertices, then the upper diagonal edges)
 - Center attachments
-- Occupying Entities
+- Occupying Characters
 - Bottom attachments (lower diagonal edges, then the bottom edge and the two bottom vertices)
 
 Rendering may be skipped if known to not be visible. Foundations should not be expected to be visible if the tile has three immediate southern neighbors, for example.
@@ -61,7 +61,7 @@ Viewed from the top, a 32 pixel wide hex would normally be about 27.7 pixels tal
 
 With a 45 degree projection, the height becomes 19.6 pixels (27.7cos(45 deg)). The vertical elements that are one z-layer tall would be 11.3 pixels tall (16sin(45)).
 
-To simplify, we're settling on hexagons being 32x20 pixels. Neighboring tiles would be found at (-24, +10), (0, +20), (24, +10), (24, -10), (0, -20), and (-24, -10) pixels. In addition, to get round numbers, we'll treat z-layers as ±12 pixels - this makes a floor and its entire foundation fit neatly in a 32x32 pixel square.
+To simplify, we're settling on hexagons being 32x20 pixels. Neighboring tiles would be found at (-24, +10), (0, +20), (24, +10), (24, -10), (0, -20), and (-24, -10) pixels. Additional pixels may be rendered under the top 20 pixels, for the foundation.
 
 This means that every dx coordinate is a delta of 8 pixels, and every dy coordinate is a delta of 5 pixels. 
 
