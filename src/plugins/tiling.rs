@@ -37,15 +37,15 @@ const FLOOR_SPRITE_COUNT: u32 = 4;
 /// hexagon occupies the top `HEX_HEIGHT` pixels and the foundation the rest,
 /// so the cell center sits half the foundation below the hexagon center.
 const FLOOR_SPRITE_Y_OFFSET: f32 = -((TILE_CELL as f32 - HEX_HEIGHT) / 2.0);
-/// Base render z of the map, above other 2d content such as the title text.
-const TILE_Z: f32 = 2.0;
 /// Render-z gap between adjacent hex layers. Must stay larger than a
 /// layer's whole y-order range so tiles of different layers never
 /// interleave; asserted below.
 const LAYER_ORDER_STEP: f32 = 1.0;
-/// Tiles are ordered within a layer by their layer-plane screen y, so a
-/// tile's top pixels draw over the bottom pixels of the tile above it, as
-/// required by `Tiling.md` to keep overlapping sprites deterministic.
+/// Tiles are ordered within a layer so that tiles lower on the screen draw
+/// over tiles above them, making a tile's top pixels draw over the bottom
+/// pixels of the tile above it, as required by `Tiling.md` to keep
+/// overlapping sprites deterministic. Grid y maps to screen-up, so the
+/// order term is negated in the transform below.
 const TILE_ORDER_Y_SCALE: f32 = 0.001;
 
 /// Total y-order range of one layer across the whole test map.
@@ -137,13 +137,8 @@ fn spawn_test_map(
                     },
                     Transform::from_xyz(
                         px.x - center.x,
-                        center.y - px.y + FLOOR_SPRITE_Y_OFFSET,
-                        // Layers first, then layer-plane y (`pos.y` excludes
-                        // the layer rise baked into `px`) so layers never
-                        // interleave in render order.
-                        TILE_Z
-                            + pos.z as f32 * LAYER_ORDER_STEP
-                            + pos.y as f32 * DY_PX * TILE_ORDER_Y_SCALE,
+                        px.y - center.y + FLOOR_SPRITE_Y_OFFSET,
+                        pos.z as f32 * LAYER_ORDER_STEP - pos.y as f32 * TILE_ORDER_Y_SCALE,
                     ),
                 ));
             }

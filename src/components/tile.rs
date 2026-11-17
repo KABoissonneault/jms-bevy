@@ -58,13 +58,14 @@ impl HexPos {
         Self::new(self.x, self.y, z)
     }
 
-    /// Pixel position of this coordinate in the world, with x increasing to
-    /// the right, y increasing downward, and each z layer rising
+    /// Pixel position of this coordinate in Bevy world space, with x
+    /// increasing to the right, y increasing upward (matching the
+    /// convention of `Transform`), and each z layer rising
     /// [`LAYER_STEP_Z`] pixels.
     pub fn pixel_pos(self) -> Vec2 {
         Vec2::new(
             DX_PX * self.x as f32,
-            DY_PX * self.y as f32 - LAYER_STEP_Z * self.z as f32,
+            DY_PX * self.y as f32 + LAYER_STEP_Z * self.z as f32,
         )
     }
 }
@@ -90,12 +91,12 @@ mod tests {
         );
         assert_eq!(HexPos::from_grid(0, 1), HexPos::new(0, ROW_DY, 0));
         // The convention holds on the whole global grid: negative odd
-        // columns (`& 1` is never negative) are staggered down as well.
+        // columns (`& 1` is never negative) are staggered up as well.
         assert_eq!(
             HexPos::from_grid(-1, 0),
             HexPos::new(-COLUMN_DX, COLUMN_DY, 0)
         );
-        // Odd columns sit COLUMN_DY below the row line.
+        // Odd columns sit COLUMN_DY above the row line.
         assert_eq!(HexPos::from_grid(2, 0), HexPos::new(2 * COLUMN_DX, 0, 0));
         assert_eq!(
             HexPos::from_grid(2, 1),
@@ -118,7 +119,7 @@ mod tests {
         // Higher z layers rise LAYER_STEP_Z pixels.
         assert_eq!(
             HexPos::new(0, 0, 1).pixel_pos(),
-            Vec2::new(0.0, -LAYER_STEP_Z)
+            Vec2::new(0.0, LAYER_STEP_Z)
         );
     }
 }
