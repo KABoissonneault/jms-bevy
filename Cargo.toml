@@ -63,8 +63,7 @@ nonstandard_macro_braces = "warn"
 # Enable a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
-# Reduce the amount of debug information to speed up linking.
-debug = "line-tables-only"
+debug = true
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
