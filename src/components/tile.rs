@@ -2,21 +2,7 @@
 
 use bevy::prelude::*;
 
-// Hex geometry, in pixels. See `doc/vault/jms/Tech Design/Tiling.md`.
-
-/// Side length of one tile cell in the floor tileset.
-pub const TILE_CELL: u32 = 32;
-
-/// Width of a hexagon (point-to-point), spanning 4 dx.
-pub const HEX_WIDTH: f32 = 32.0;
-/// Height of a hexagon (flat-to-flat), spanning 4 dy.
-pub const HEX_HEIGHT: f32 = 20.0;
-/// The dx unit: smallest x delta, a quarter of [`HEX_WIDTH`].
-pub const DX_PX: f32 = HEX_WIDTH / 4.0;
-/// The dy unit: smallest y delta, a quarter of [`HEX_HEIGHT`].
-pub const DY_PX: f32 = HEX_HEIGHT / 4.0;
-/// Pixel distance between hex grid layers (`S`).
-pub const LAYER_STEP_Z: f32 = 11.0;
+// Hex geometry. See `doc/vault/jms/Tech Design/Tiling.md`.
 
 // Steps between neighboring grid positions, in dx/dy units.
 
@@ -57,17 +43,6 @@ impl HexPos {
     pub const fn at_layer(self, z: i32) -> Self {
         Self::new(self.x, self.y, z)
     }
-
-    /// Pixel position of this coordinate in Bevy world space, with x
-    /// increasing to the right, y increasing upward (matching the
-    /// convention of `Transform`), and each z layer rising
-    /// [`LAYER_STEP_Z`] pixels.
-    pub fn pixel_pos(self) -> Vec2 {
-        Vec2::new(
-            DX_PX * self.x as f32,
-            DY_PX * self.y as f32 + LAYER_STEP_Z * self.z as f32,
-        )
-    }
 }
 
 /// A tile occupying the hexagon at its [`HexPos`].
@@ -107,19 +82,5 @@ mod tests {
     #[test]
     fn at_layer_moves_between_layers() {
         assert_eq!(HexPos::new(1, 2, 0).at_layer(-1), HexPos::new(1, 2, -1));
-    }
-
-    #[test]
-    fn pixel_pos_scales_by_pixel_units() {
-        assert_eq!(HexPos::new(0, 0, 0).pixel_pos(), Vec2::ZERO);
-        // One x unit is one dx to the right.
-        assert_eq!(HexPos::new(1, 0, 0).pixel_pos(), Vec2::new(DX_PX, 0.0));
-        // A full hexagon spans 4 dy.
-        assert_eq!(HexPos::new(0, 4, 0).pixel_pos(), Vec2::new(0.0, HEX_HEIGHT));
-        // Higher z layers rise LAYER_STEP_Z pixels.
-        assert_eq!(
-            HexPos::new(0, 0, 1).pixel_pos(),
-            Vec2::new(0.0, LAYER_STEP_Z)
-        );
     }
 }

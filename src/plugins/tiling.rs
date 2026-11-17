@@ -5,7 +5,49 @@
 use bevy::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
-use crate::components::{COLUMN_DY, DY_PX, HEX_HEIGHT, HexPos, ROW_DY, TILE_CELL, Tile};
+use crate::components::{COLUMN_DY, HexPos, ROW_DY, Tile};
+
+/// Side length of one tile cell in the floor tileset.
+const TILE_CELL: u32 = 32;
+
+/// Width of a hexagon (point-to-point), spanning 4 dx.
+const HEX_WIDTH_PX: f32 = 32.0;
+/// Height of a hexagon (flat-to-flat), spanning 4 dy.
+const HEX_HEIGHT_PX: f32 = 20.0;
+/// The dx unit: smallest x delta, a quarter of [`HEX_WIDTH_PX`].
+const DX_PX: f32 = HEX_WIDTH_PX / 4.0;
+/// The dy unit: smallest y delta, a quarter of [`HEX_HEIGHT_PX`].
+const DY_PX: f32 = HEX_HEIGHT_PX / 4.0;
+/// Pixel distance between hex grid layers (`S`).
+const LAYER_STEP_Z_PX: f32 = 11.0;
+
+/// Pixel position of this coordinate in Bevy world space, with x
+/// increasing to the right, y increasing upward (matching the
+/// convention of `Transform`), and each z layer rising
+/// [`LAYER_STEP_Z`] pixels.
+pub fn pixel_delta(coord: HexPos) -> Vec2 {
+    Vec2::new(
+        DX_PX * coord.x as f32,
+        DY_PX * coord.y as f32 + LAYER_STEP_Z_PX * coord.z as f32,
+    )
+}
+
+#[test]
+fn pixel_pos_scales_by_pixel_units() {
+    assert_eq!(pixel_delta(HexPos::new(0, 0, 0)), Vec2::ZERO);
+    // One x unit is one dx to the right.
+    assert_eq!(pixel_delta(HexPos::new(1, 0, 0)), Vec2::new(DX_PX, 0.0));
+    // A full hexagon spans 4 dy.
+    assert_eq!(
+        pixel_delta(HexPos::new(0, 4, 0)),
+        Vec2::new(0.0, HEX_HEIGHT_PX)
+    );
+    // Higher z layers rise LAYER_STEP_Z pixels.
+    assert_eq!(
+        pixel_delta(HexPos::new(0, 0, 1)),
+        Vec2::new(0.0, LAYER_STEP_Z_PX)
+    );
+}
 
 /// Floor tileset in `assets/`. Each `TILE_CELL`-pixel square cell of the
 /// image holds one floor graphic; tile indices traverse from the top-left,
@@ -36,7 +78,7 @@ const FLOOR_SPRITE_COUNT: u32 = 4;
 /// of its sprite, in pixels. The sprite is one `TILE_CELL` square: the
 /// hexagon occupies the top `HEX_HEIGHT` pixels and the foundation the rest,
 /// so the cell center sits half the foundation below the hexagon center.
-const FLOOR_SPRITE_Y_OFFSET: f32 = -((TILE_CELL as f32 - HEX_HEIGHT) / 2.0);
+const FLOOR_SPRITE_Y_OFFSET: f32 = -((TILE_CELL as f32 - HEX_HEIGHT_PX) / 2.0);
 /// Render-z gap between adjacent hex layers. Must stay larger than a
 /// layer's whole y-order range so tiles of different layers never
 /// interleave; asserted below.
@@ -106,7 +148,7 @@ fn spawn_test_map(
 
     // The map spans from the origin tile to the opposite corner; center
     // that extent on the camera.
-    let corner = HexPos::from_grid(TEST_MAP_COLS - 1, TEST_MAP_ROWS - 1).pixel_pos();
+    let corner = pixel_delta(HexPos::from_grid(TEST_MAP_COLS - 1, TEST_MAP_ROWS - 1));
     let center = corner / 2.0;
 
     for &layer in &TEST_MAP_LAYERS {
@@ -121,7 +163,7 @@ fn spawn_test_map(
                     continue;
                 }
                 let pos = HexPos::from_grid(col, row).at_layer(layer);
-                let px = pos.pixel_pos();
+                let px = pixel_delta(pos);
                 let floor = rng.random_range(0..sprite_count);
                 commands.spawn((
                     Name::new("Tile"),
