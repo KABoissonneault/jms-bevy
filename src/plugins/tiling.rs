@@ -1,11 +1,14 @@
 //! The hex map. For now this only generates a random test map — a full base
 //! layer with holes, plus sparse layers above and below — to exercise grid
-//! and layer rendering. See `doc/vault/jms/Tech Design/Tiling.md`.
+//! and layer rendering, and registers the `HexStorage` observers that make
+//! the spawned grid queryable. See `doc/vault/jms/Tech Design/Tiling.md`.
 
+use bevy::asset::AssetEvent;
 use bevy::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 use crate::components::{COLUMN_DY, HexPos, ROW_DY, Tile};
+use crate::resources::{HexStorage, on_insert_hex_pos, on_remove_hex_pos};
 
 /// Side length of one tile cell in the floor tileset.
 const TILE_CELL: u32 = 32;
@@ -105,7 +108,10 @@ struct FloorTileset {
 }
 
 pub(crate) fn plugin(app: &mut App) {
-    app.add_systems(Startup, load_tileset)
+    app.insert_resource(HexStorage::default())
+        .add_observer(on_insert_hex_pos)
+        .add_observer(on_remove_hex_pos)
+        .add_systems(Startup, load_tileset)
         .add_systems(Update, spawn_test_map);
 }
 
@@ -116,10 +122,14 @@ fn load_tileset(mut commands: Commands, assets: Res<AssetServer>) {
     });
 }
 
-/// Waits for the tileset image to load, then slices it into `TILE_CELL`
-/// cells and spawns the test map.
+/// Slices the tileset image into `TILE_CELL` cells and spawns the test map
+/// on the frame the image reports its load complete. Scheduled on `Update`
+/// because the asset arrives a few frames after `Startup` — the asset-event
+/// reader keeps every earlier frame a no-op, and the `layout` guard below
+/// makes every later frame one too.
 fn spawn_test_map(
     mut commands: Commands,
+    mut asset_events: MessageReader<AssetEvent<Image>>,
     mut tileset: ResMut<FloorTileset>,
     images: Res<Assets<Image>>,
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
@@ -127,8 +137,14 @@ fn spawn_test_map(
     if tileset.layout.is_some() {
         return;
     }
-    let Some(image) = images.get(&tileset.image) else {
+    let loaded = asset_events.read().any(|event| {
+        matches!(event, AssetEvent::LoadedWithDependencies { id } if *id == tileset.image.id())
+    });
+    if !loaded {
         return; // Still loading.
+    }
+    let Some(image) = images.get(&tileset.image) else {
+        return;
     };
 
     // Slice the loaded image into tile cells based on its actual dimensions.

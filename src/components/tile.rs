@@ -79,7 +79,7 @@ pub enum PosKind {
 /// of `Tiling.md`: (x, y) are in quarter-hex units (dx and dy) on the
 /// horizontal slice of the world, and z is the hex grid layer index.
 /// Hexagon centers and vertices are always aligned to an even y.
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct HexPos {
     pub x: i32,
     pub y: i32,
@@ -104,6 +104,21 @@ impl HexPos {
     /// Returns this position moved to the hex grid layer `z`.
     pub const fn at_layer(self, z: i32) -> Self {
         Self::new(self.x, self.y, z)
+    }
+
+    /// The grid cell `(col, row)` under this position: the inverse of
+    /// [`HexPos::from_grid`]. Only hexagon centers sit on grid cells —
+    /// checking `x % 3 == 0` directly because [`PosKind`] comparison isn't
+    /// const — so vertices and non-canonical positions return `None`.
+    pub const fn to_grid(self) -> Option<(i32, i32)> {
+        if !self.is_canonical() || self.x.rem_euclid(COLUMN_DX) != 0 {
+            return None;
+        }
+        let col = self.x.div_euclid(COLUMN_DX);
+        // Odd columns sit COLUMN_DY above the row line, same as in
+        // `from_grid`.
+        let row = (self.y - COLUMN_DY * (col & 1)).div_euclid(ROW_DY);
+        Some((col, row))
     }
 
     /// Whether `(x, y)` is a canonical position (`Tiling.md`): aligned to a
@@ -191,6 +206,24 @@ mod tests {
     #[test]
     fn at_layer_moves_between_layers() {
         assert_eq!(HexPos::new(1, 2, 0).at_layer(-1), HexPos::new(1, 2, -1));
+    }
+
+    #[test]
+    fn to_grid_inverts_from_grid() {
+        for col in -4..=4 {
+            for row in -4..=4 {
+                assert_eq!(
+                    HexPos::from_grid(col, row).to_grid(),
+                    Some((col, row)),
+                    "cell ({col}, {row})"
+                );
+            }
+        }
+        // Vertices and non-canonical positions have no grid cell.
+        assert_eq!(HexPos::new(1, 2, 0).to_grid(), None);
+        assert_eq!(HexPos::new(2, 0, 0).to_grid(), None);
+        assert_eq!(HexPos::new(0, 2, 0).to_grid(), None);
+        assert_eq!(HexPos::new(1, 1, 7).to_grid(), None);
     }
 
     #[test]
