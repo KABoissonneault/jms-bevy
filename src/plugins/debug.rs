@@ -5,6 +5,7 @@ use bevy::diagnostic::{
 };
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
+use bevy_remote::{RemotePlugin, http::RemoteHttpPlugin};
 
 // Collects diagnostics and displays them in an egui window toggled with F1.
 // This keeps the console output clear for warnings, errors, and important
@@ -20,6 +21,8 @@ pub(crate) fn plugin(app: &mut App) {
         FrameTimeDiagnosticsPlugin::default(),
         EntityCountDiagnosticsPlugin::default(),
         SystemInformationDiagnosticsPlugin,
+        RemotePlugin::default(),
+        RemoteHttpPlugin::default(),
     ))
     .init_resource::<ShowDiagnostics>()
     .add_systems(Update, toggle_diagnostics_window)

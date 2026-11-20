@@ -28,6 +28,8 @@ rand = "0.10"
 # Compile low-severity logs out of web builds for performance.
 tracing = { version = "0.1", features = ["max_level_debug", "release_max_level_warn"] }
 
+bevy_remote = { version = "0.20", optional = true }
+
 [features]
 default = [
   # Default to a native dev build.
@@ -43,6 +45,7 @@ dev_native = [
 dev = [
   # In-game diagnostics window (egui), toggled with F1.
   "dep:bevy_egui",
+  "dep:bevy_remote",
   # Improve compile times for dev builds by linking Bevy as a dynamic library.
   "bevy/dynamic_linking",
   "bevy/bevy_dev_tools",
