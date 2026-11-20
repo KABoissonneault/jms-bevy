@@ -12,7 +12,11 @@
 //!   component), in a dense per-z-layer grid whose holes are `None`;
 //! - [`HexStorage::occupant_at`] — every other positioned entity (occupants
 //!   standing on hexagons, attachments on vertices), in a position map;
-//! - [`HexStorage::is_free`] — whether a hexagon can be entered.
+//! - [`HexStorage::is_free`] — whether a hexagon can be entered;
+//! - [`HexStorage::topmost_tile_at`] — the highest floor sharing an xy,
+//!   the layer an occupant belongs on;
+//! - [`HexStorage::edge_toward`] — the shared edge between two tiles,
+//!   redirecting southern lookups to the neighbor's northern copy.
 //!
 //! The backing storages are private: dense grid vs. position map stays
 //! swappable, and the dense grid covers only the cells seen so far,
@@ -22,7 +26,7 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 
-use crate::components::{HexPos, Tile};
+use crate::components::{Direction, EdgeState, HexPos, Tile, TileEdges, TileState};
 
 /// Where every positioned entity currently sits, so gameplay can ask
 /// "what is at this hex?" without scanning the world. Mirrors
@@ -66,9 +70,39 @@ impl HexStorage {
 
     /// Whether the hexagon center `pos` can be entered: it has a floor
     /// tile and no occupant of its own. Always false for holes, vertices,
-    /// and non-canonical positions.
+    /// and non-canonical positions. This is the raw storage view only —
+    /// [`TileState`] and [`TileEdges`] restrictions layer on top in the
+    /// movement rules.
     pub fn is_free(&self, pos: HexPos) -> bool {
         self.tile_at(pos).is_some() && self.occupant_at(pos).is_none()
+    }
+
+    /// The topmost floor tile covering the hexagon under `(x, y)` — its
+    /// z layer and entity. This is the layer something standing at that
+    /// spot belongs on: the highest floor sharing its xy, so it neither
+    /// sinks under a higher layer's tile nor floats over bare ground.
+    pub fn topmost_tile_at(&self, x: i32, y: i32) -> Option<(i32, Entity)> {
+        self.layers
+            .iter()
+            .filter_map(|(&z, layer)| layer.get(HexPos::new(x, y, z)).map(|tile| (z, tile)))
+            .max_by_key(|&(z, _)| z)
+    }
+
+    /// The traversal state of the shared edge between the tile at `pos`
+    /// and its neighbor toward `direction`, read from whichever tile owns
+    /// it per [`TileEdges::owner`]: the tile's own northern flag, or — for
+    /// southern directions — the neighbor's northern copy. `None` when
+    /// either side of the edge is missing: a hole, a missing neighbor, or
+    /// a non-canonical position with no edges at all.
+    pub fn edge_toward(
+        &self,
+        pos: HexPos,
+        direction: Direction,
+        edges: &Query<&TileEdges>,
+    ) -> Option<EdgeState> {
+        let (owner_pos, owned) = TileEdges::owner(pos, direction)?;
+        let owner = self.tile_at(owner_pos)?;
+        edges.get(owner).ok()?.owned(owned)
     }
 
     /// Number of stored floor tiles across all layers.
@@ -238,6 +272,7 @@ impl TileLayer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bevy::ecs::system::RunSystemOnce;
 
     /// Stable fake entity ids for the world-free tests.
     fn entity(id: u32) -> Entity {
@@ -401,5 +436,124 @@ mod tests {
         assert_eq!(world.resource::<HexStorage>().tile_at(vertex), None);
         world.despawn(attachment);
         assert_eq!(world.resource::<HexStorage>().occupant_at(vertex), None);
+    }
+
+    #[test]
+    fn topmost_tile_at_takes_the_highest_floor() {
+        let mut storage = HexStorage::default();
+        let xy = HexPos::from_grid(2, 3); // (6, 12)
+        // Layers stacked out of order, plus an occupant far above — which
+        // is not a floor and must not win.
+        storage.track(entity(1), xy.at_layer(0), true);
+        storage.track(entity(2), xy.at_layer(-2), true);
+        storage.track(entity(3), xy.at_layer(5), false);
+        storage.track(entity(4), xy.at_layer(1), true);
+        assert_eq!(storage.topmost_tile_at(6, 12), Some((1, entity(4))));
+
+        // Removing the top exposes the layer below.
+        storage.untrack(entity(4));
+        assert_eq!(storage.topmost_tile_at(6, 12), Some((0, entity(1))));
+
+        // Bare ground has no top at all.
+        assert_eq!(storage.topmost_tile_at(0, 4), None);
+    }
+
+    #[test]
+    fn edge_toward_redirects_southern_lookups_to_the_neighbor() {
+        let mut world = World::new();
+        world.insert_resource(HexStorage::default());
+        world.add_observer(on_insert_hex_pos);
+        world.add_observer(on_remove_hex_pos);
+
+        let origin = HexPos::from_grid(0, 0);
+        let north = origin.neighbor(Direction::North).unwrap();
+        let south = origin.neighbor(Direction::South).unwrap();
+        let origin_tile = world.spawn((origin, Tile { floor: 0 })).id();
+        world.spawn((north, Tile { floor: 0 }));
+        let south_tile = world.spawn((south, Tile { floor: 0 })).id();
+
+        // Required components put fresh tiles in the free state on both
+        // sides of every edge.
+        assert_eq!(world.get::<TileState>(origin_tile), Some(&TileState::Free));
+        assert_eq!(world.get::<TileEdges>(origin_tile), Some(&TileEdges::FREE));
+
+        // Every edge with a tile on both sides reads free: north from the
+        // origin's own flags, south from its southern neighbor's copy.
+        world
+            .run_system_once(move |storage: Res<HexStorage>, edges: Query<&TileEdges>| {
+                for direction in [Direction::North, Direction::South] {
+                    assert_eq!(
+                        storage.edge_toward(origin, direction, &edges),
+                        Some(EdgeState::Free),
+                        "origin toward {direction:?}"
+                    );
+                }
+                // The northern edges are the tile's own flags: they
+                // answer even where no tile lies beyond the edge, reading
+                // free from the origin itself.
+                assert_eq!(
+                    storage.edge_toward(origin, Direction::NorthWest, &edges),
+                    Some(EdgeState::Free)
+                );
+            })
+            .unwrap();
+
+        // Blocking the origin's own north edge shows up when read from the
+        // other side too: one physical edge, one stored copy. Southern
+        // lookups stay independent — they read the southern neighbor's
+        // copy, not this one.
+        world.entity_mut(origin_tile).insert(TileEdges {
+            north: EdgeState::Blocked,
+            ..Default::default()
+        });
+        world
+            .run_system_once(move |storage: Res<HexStorage>, edges: Query<&TileEdges>| {
+                assert_eq!(
+                    storage.edge_toward(origin, Direction::North, &edges),
+                    Some(EdgeState::Blocked)
+                );
+                assert_eq!(
+                    storage.edge_toward(north, Direction::South, &edges),
+                    Some(EdgeState::Blocked)
+                );
+                assert_eq!(
+                    storage.edge_toward(origin, Direction::South, &edges),
+                    Some(EdgeState::Free)
+                );
+            })
+            .unwrap();
+
+        // Blocking the southern neighbor's north edge is the same act as
+        // blocking the origin's south edge — the redirected lookup and the
+        // owner's own agree.
+        world.entity_mut(south_tile).insert(TileEdges {
+            north: EdgeState::Blocked,
+            ..Default::default()
+        });
+        world
+            .run_system_once(move |storage: Res<HexStorage>, edges: Query<&TileEdges>| {
+                assert_eq!(
+                    storage.edge_toward(origin, Direction::South, &edges),
+                    Some(EdgeState::Blocked)
+                );
+                assert_eq!(
+                    storage.edge_toward(south, Direction::North, &edges),
+                    Some(EdgeState::Blocked)
+                );
+
+                // No neighbor, no edge: south of the south tile and
+                // southwest of the origin there is nothing to read, and
+                // non-canonical positions have no edges at all.
+                assert_eq!(storage.edge_toward(south, Direction::South, &edges), None);
+                assert_eq!(
+                    storage.edge_toward(origin, Direction::SouthWest, &edges),
+                    None
+                );
+                assert_eq!(
+                    storage.edge_toward(HexPos::new(1, 2, 0), Direction::North, &edges),
+                    None
+                );
+            })
+            .unwrap();
     }
 }

@@ -1,10 +1,13 @@
 //! The hex map. For now this only generates a random test map — a full base
 //! layer with holes, plus sparse layers above and below — to exercise grid
 //! and layer rendering, and registers the `HexStorage` observers that make
-//! the spawned grid queryable. See `doc/vault/jms/Tech Design/Tiling.md`.
+//! the spawned grid queryable. A reference occupant from the tiling plan
+//! then stands on the topmost tile at one spot. See
+//! `doc/vault/jms/Tech Design/Tiling.md`.
 
 use bevy::asset::AssetEvent;
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 use crate::components::{COLUMN_DY, HexPos, ROW_DY, Tile};
@@ -93,6 +96,24 @@ const LAYER_ORDER_STEP: f32 = 1.0;
 /// order term is negated in the transform below.
 const TILE_ORDER_Y_SCALE: f32 = 0.001;
 
+/// Sprite of the reference occupant standing on the test map.
+const CAPSULE_SPRITE_PATH: &str = "sprites/capsule.png";
+/// Occupants are above all floors of the z layer
+const OCCUPANT_ORDER_BUMP: f32 = 1.0;
+/// Portion of the capsule image that hangs below its hexagon center: the
+/// character's feet, resting on the floor of the tile it stands on.
+const OCCUPANT_FEET_FRACTION: f32 = 0.16;
+/// Anchor putting that point of the sprite on the hexagon center, instead
+/// of the image's middle (`Anchor::CENTER`).
+const OCCUPANT_SPRITE_ANCHOR: Anchor = Anchor(Vec2::new(0.0, -0.5 + OCCUPANT_FEET_FRACTION));
+
+/// Center of the generated map extent: the offset every map entity
+/// subtracts from its pixel position so the grid is centered on the
+/// camera. The map spans from the origin tile to the opposite corner.
+fn map_center() -> Vec2 {
+    pixel_delta(HexPos::from_grid(TEST_MAP_COLS - 1, TEST_MAP_ROWS - 1)) / 2.0
+}
+
 /// Total y-order range of one layer across the whole test map.
 const TILE_ORDER_Y_RANGE: f32 = TILE_ORDER_Y_SCALE
     * DY_PX
@@ -112,7 +133,7 @@ pub(crate) fn plugin(app: &mut App) {
         .add_observer(on_insert_hex_pos)
         .add_observer(on_remove_hex_pos)
         .add_systems(Startup, load_tileset)
-        .add_systems(Update, spawn_test_map);
+        .add_systems(Update, (spawn_test_map, spawn_reference_occupant).chain());
 }
 
 fn load_tileset(mut commands: Commands, assets: Res<AssetServer>) {
@@ -161,11 +182,7 @@ fn spawn_test_map(
 
     let sprite_count = FLOOR_SPRITE_COUNT.min(columns * rows);
     let mut rng = StdRng::seed_from_u64(TEST_MAP_SEED);
-
-    // The map spans from the origin tile to the opposite corner; center
-    // that extent on the camera.
-    let corner = pixel_delta(HexPos::from_grid(TEST_MAP_COLS - 1, TEST_MAP_ROWS - 1));
-    let center = corner / 2.0;
+    let center = map_center();
 
     for &layer in &TEST_MAP_LAYERS {
         let appear_chance = if layer == BASE_LAYER {
@@ -202,4 +219,59 @@ fn spawn_test_map(
             }
         }
     }
+}
+
+/// Spawns the tiling plan's reference occupant: a capsule standing on an
+/// arbitrary tile of the test map. The occupant keeps its tile's xy and
+/// takes the z of [`HexStorage::topmost_tile_at`] — the topmost layer with
+/// a tile at that xy — so it stands on the highest floor covering its
+/// position wherever the sparse upper layers overlap the base one.
+///
+/// Chained after [`spawn_test_map`]: the tiles it spawns (and the storage
+/// entries its observers write) are applied at the automatic sync point
+/// between the two systems.
+fn spawn_reference_occupant(
+    mut commands: Commands,
+    storage: Res<HexStorage>,
+    assets: Res<AssetServer>,
+    mut spawned: Local<bool>,
+) {
+    if *spawned {
+        return;
+    }
+    // Any tile will do: prefer the middle of the map, falling back to the
+    // first cell in generation order that has a floor at all.
+    let top_at = |x: i32, y: i32| {
+        storage
+            .topmost_tile_at(x, y)
+            .map(|(z, _)| HexPos::new(x, y, z))
+    };
+    let middle = HexPos::from_grid(TEST_MAP_COLS / 2, TEST_MAP_ROWS / 2);
+    let spot = top_at(middle.x, middle.y).or_else(|| {
+        (0..TEST_MAP_COLS)
+            .flat_map(|col| (0..TEST_MAP_ROWS).map(move |row| HexPos::from_grid(col, row)))
+            .find_map(|pos| top_at(pos.x, pos.y))
+    });
+    let Some(spot) = spot else {
+        return; // No tiles on the map yet — try again next frame.
+    };
+    *spawned = true;
+
+    let px = pixel_delta(spot);
+    let center = map_center();
+    commands.spawn((
+        Name::new("Occupant"),
+        spot,
+        Sprite {
+            image: assets.load(CAPSULE_SPRITE_PATH),
+            ..default()
+        },
+        OCCUPANT_SPRITE_ANCHOR,
+        Transform::from_xyz(
+            px.x - center.x,
+            px.y - center.y,
+            spot.z as f32 * LAYER_ORDER_STEP - spot.y as f32 * TILE_ORDER_Y_SCALE
+                + OCCUPANT_ORDER_BUMP,
+        ),
+    ));
 }

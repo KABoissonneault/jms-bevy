@@ -169,11 +169,105 @@ impl HexPos {
     }
 }
 
-/// A tile occupying the hexagon at its [`HexPos`].
+/// A tile occupying the hexagon at its [`HexPos`]. Spawning one also
+/// inserts its collision state: [`TileState::Free`] and all-free
+/// [`TileEdges`], overridable per tile afterwards.
 #[derive(Component, Debug, Clone, Copy)]
+#[require(TileState, TileEdges)]
 pub struct Tile {
     /// Index of the floor graphic in the floor tileset.
     pub floor: u32,
+}
+
+/// Occupancy state of a whole tile (`Tiling.md` §Collision). Fresh tiles
+/// default to [`TileState::Free`]; only exceptional tiles are given
+/// another state explicitly.
+#[derive(Component, Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum TileState {
+    /// The tile cannot be occupied or overlapped (ex: solid rock).
+    Blocked,
+    /// The tile cannot be occupied, but can be partially accessed
+    /// (ex: the face of a counter).
+    Obstructed,
+    /// The tile can be occupied or overlapped.
+    #[default]
+    Free,
+}
+
+/// Traversal state of one edge between two neighboring tiles (`Tiling.md`
+/// §Collision).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum EdgeState {
+    /// The edge cannot be traversed (ex: a wall along it).
+    Blocked,
+    /// The edge can be traversed.
+    #[default]
+    Free,
+}
+
+/// The traversal flags of a tile's three northern edges (`Tiling.md`
+/// §Collision). Each tile owns only its northern edges: the three southern
+/// ones are the northern copies of its southern neighbors, so every shared
+/// edge is stored exactly once and dual-write drift is impossible. Lookups
+/// of a whole edge — either direction — go through
+/// `HexStorage::edge_toward`, which applies [`TileEdges::owner`]'s
+/// redirection.
+#[derive(Component, Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TileEdges {
+    /// The shared edge with the NorthWest neighbor.
+    pub north_west: EdgeState,
+    /// The shared edge with the North neighbor.
+    pub north: EdgeState,
+    /// The shared edge with the NorthEast neighbor.
+    pub north_east: EdgeState,
+}
+
+impl TileEdges {
+    /// Every owned edge free — also the default.
+    pub const FREE: Self = Self {
+        north_west: EdgeState::Free,
+        north: EdgeState::Free,
+        north_east: EdgeState::Free,
+    };
+
+    /// Every owned edge blocked, ex: surrounding a solid obstacle.
+    pub const BLOCKED: Self = Self {
+        north_west: EdgeState::Blocked,
+        north: EdgeState::Blocked,
+        north_east: EdgeState::Blocked,
+    };
+
+    /// The flag this component holds for `direction` — one of its three
+    /// northern edges. `None` for the southern directions, whose flags
+    /// belong to the southern neighbors' copies.
+    pub const fn owned(self, direction: Direction) -> Option<EdgeState> {
+        match direction {
+            Direction::NorthWest => Some(self.north_west),
+            Direction::North => Some(self.north),
+            Direction::NorthEast => Some(self.north_east),
+            Direction::SouthWest | Direction::South | Direction::SouthEast => None,
+        }
+    }
+
+    /// Which tile owns the shared edge of the tile at `pos` toward
+    /// `direction`, paired with that edge's direction as seen from the
+    /// owner: the tile itself for its northern edges, and otherwise its
+    /// southern neighbor holding the opposite northern copy. `None` only
+    /// for non-canonical positions, which have no neighbors — canonical
+    /// ones always do, on the unbounded lattice.
+    pub const fn owner(pos: HexPos, direction: Direction) -> Option<(HexPos, Direction)> {
+        match direction {
+            Direction::NorthWest | Direction::North | Direction::NorthEast => {
+                Some((pos, direction))
+            }
+            Direction::SouthWest | Direction::South | Direction::SouthEast => {
+                match pos.neighbor(direction) {
+                    Some(neighbor) => Some((neighbor, direction.opposite())),
+                    None => None,
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -431,6 +525,52 @@ mod tests {
         for (direction, neighbor) in listed {
             assert!(Direction::ALL.contains(&direction));
             assert_eq!(center.neighbor(direction), Some(neighbor));
+        }
+    }
+
+    #[test]
+    fn edge_ownership_keeps_northern_edges_on_the_tile() {
+        // A tile reads its own flags for the three northern edges, exactly
+        // as stored.
+        let pos = HexPos::from_grid(2, 3);
+        for direction in [Direction::NorthWest, Direction::North, Direction::NorthEast] {
+            assert_eq!(TileEdges::owner(pos, direction), Some((pos, direction)));
+        }
+    }
+
+    #[test]
+    fn edge_ownership_redirects_southern_edges_to_the_neighbor() {
+        // Southern edges live on the southern neighbors as their opposite
+        // (northern) copies, so one physical edge has exactly one owner.
+        let pos = HexPos::from_grid(2, 3);
+        for direction in [Direction::SouthWest, Direction::South, Direction::SouthEast] {
+            assert_eq!(
+                TileEdges::owner(pos, direction),
+                pos.neighbor(direction)
+                    .map(|neighbor| (neighbor, direction.opposite()))
+            );
+        }
+        // Ownership never falls through on the unbounded lattice — every
+        // canonical position has all six neighbors — but non-canonical
+        // positions have no edges at all.
+        assert_eq!(
+            TileEdges::owner(HexPos::new(1, 1, 0), Direction::South),
+            None
+        );
+    }
+
+    #[test]
+    fn tile_edges_own_their_northern_flags_only() {
+        let edges = TileEdges {
+            north: EdgeState::Blocked,
+            ..Default::default()
+        };
+        assert_eq!(edges.owned(Direction::North), Some(EdgeState::Blocked));
+        assert_eq!(edges.owned(Direction::NorthWest), Some(EdgeState::Free));
+        assert_eq!(edges.owned(Direction::NorthEast), Some(EdgeState::Free));
+        // Southern flags are not this component's to answer for.
+        for direction in [Direction::SouthWest, Direction::South, Direction::SouthEast] {
+            assert_eq!(edges.owned(direction), None);
         }
     }
 }
