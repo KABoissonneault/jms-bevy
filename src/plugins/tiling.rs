@@ -2,7 +2,8 @@
 //! layer with holes, plus sparse layers above and below — to exercise grid
 //! and layer rendering, and registers the `HexStorage` observers that make
 //! the spawned grid queryable. A reference occupant from the tiling plan
-//! then stands on the topmost tile at one spot. See
+//! then stands on the topmost tile at one spot, and `QWEASD` steps it one
+//! hex per press through the [`MoveEntity`] command. See
 //! `doc/vault/jms/Tech Design/Tiling.md`.
 
 use bevy::asset::AssetEvent;
@@ -10,7 +11,8 @@ use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
-use crate::components::{COLUMN_DY, HexPos, ROW_DY, Tile};
+use crate::components::{COLUMN_DY, Direction, HexPos, ROW_DY, Tile};
+use crate::movement::{MoveEntity, Player};
 use crate::resources::{HexStorage, on_insert_hex_pos, on_remove_hex_pos};
 
 /// Side length of one tile cell in the floor tileset.
@@ -107,6 +109,18 @@ const OCCUPANT_FEET_FRACTION: f32 = 0.16;
 /// of the image's middle (`Anchor::CENTER`).
 const OCCUPANT_SPRITE_ANCHOR: Anchor = Anchor(Vec2::new(0.0, -0.5 + OCCUPANT_FEET_FRACTION));
 
+/// The `QWEASD` movement keys of `Tiling.md`, paired with the hex
+/// direction each one steps: Q `NorthWest`, W `North`, E `NorthEast`, A
+/// `SouthWest`, S `South`, D `SouthEast`.
+const MOVE_KEYS: [(KeyCode, Direction); 6] = [
+    (KeyCode::KeyQ, Direction::NorthWest),
+    (KeyCode::KeyW, Direction::North),
+    (KeyCode::KeyE, Direction::NorthEast),
+    (KeyCode::KeyA, Direction::SouthWest),
+    (KeyCode::KeyS, Direction::South),
+    (KeyCode::KeyD, Direction::SouthEast),
+];
+
 /// Center of the generated map extent: the offset every map entity
 /// subtracts from its pixel position so the grid is centered on the
 /// camera. The map spans from the origin tile to the opposite corner.
@@ -133,7 +147,16 @@ pub(crate) fn plugin(app: &mut App) {
         .add_observer(on_insert_hex_pos)
         .add_observer(on_remove_hex_pos)
         .add_systems(Startup, load_tileset)
-        .add_systems(Update, (spawn_test_map, spawn_reference_occupant).chain());
+        .add_systems(
+            Update,
+            (
+                spawn_test_map,
+                spawn_reference_occupant,
+                move_player_on_input,
+                sync_occupant_transforms,
+            )
+                .chain(),
+        );
 }
 
 fn load_tileset(mut commands: Commands, assets: Res<AssetServer>) {
@@ -221,6 +244,19 @@ fn spawn_test_map(
     }
 }
 
+/// World-space position of an occupant standing at `pos`: its pixel
+/// position centered on the map, raised into the occupant render band of
+/// its z layer — above all floors of the layer, with the y-order term.
+fn occupant_transform(pos: HexPos) -> Vec3 {
+    let px = pixel_delta(pos);
+    let center = map_center();
+    Vec3::new(
+        px.x - center.x,
+        px.y - center.y,
+        pos.z as f32 * LAYER_ORDER_STEP - pos.y as f32 * TILE_ORDER_Y_SCALE + OCCUPANT_ORDER_BUMP,
+    )
+}
+
 /// Spawns the tiling plan's reference occupant: a capsule standing on an
 /// arbitrary tile of the test map. The occupant keeps its tile's xy and
 /// takes the z of [`HexStorage::topmost_tile_at`] — the topmost layer with
@@ -257,21 +293,57 @@ fn spawn_reference_occupant(
     };
     *spawned = true;
 
-    let px = pixel_delta(spot);
-    let center = map_center();
     commands.spawn((
         Name::new("Occupant"),
         spot,
+        Player,
         Sprite {
             image: assets.load(CAPSULE_SPRITE_PATH),
             ..default()
         },
         OCCUPANT_SPRITE_ANCHOR,
-        Transform::from_xyz(
-            px.x - center.x,
-            px.y - center.y,
-            spot.z as f32 * LAYER_ORDER_STEP - spot.y as f32 * TILE_ORDER_Y_SCALE
-                + OCCUPANT_ORDER_BUMP,
-        ),
+        Transform::from_translation(occupant_transform(spot)),
     ));
+}
+
+/// Steps the player one hex per `QWEASD` press. Movement itself goes
+/// through [`MoveEntity`], which validates the step against the movement
+/// rules and rejects it without effects when the destination has no free
+/// topmost tile or the height change crosses more than one z layer.
+fn move_player_on_input(
+    input: Res<ButtonInput<KeyCode>>,
+    player: Single<Entity, With<Player>>,
+    mut commands: Commands,
+) {
+    for (key, direction) in MOVE_KEYS {
+        if input.just_pressed(key) {
+            commands.queue(MoveEntity {
+                entity: *player,
+                direction,
+            });
+        }
+    }
+}
+
+/// Keeps non-tile sprites at their [`HexPos`]: a `Changed<HexPos>` write
+/// re-derives the same placement [`occupant_transform`] gives new
+/// occupants, so a successful step moves the capsule the same frame. Tiles
+/// are excluded — they never move, and their sprites sit at the floor
+/// sprite's foundation offset. This is the occupant slice of the plan's
+/// full `HexPos → Transform` sync (Tier 1 step 5).
+fn sync_occupant_transforms(
+    mut occupants: Query<
+        (&HexPos, &mut Transform, Option<&mut Mesh2d>),
+        (Without<Tile>, Changed<HexPos>),
+    >,
+) {
+    for (pos, mut transform, mesh) in &mut occupants {
+        transform.translation = occupant_transform(*pos);
+        // Bevy 0.20's retained Transparent2d phase captures sort_key = mesh_z at
+        // queue time and never refreshes it for moved meshes; bumping Mesh2d
+        // re-queues the phase item with the current z.
+        if let Some(mut mesh) = mesh {
+            mesh.set_changed();
+        }
+    }
 }
