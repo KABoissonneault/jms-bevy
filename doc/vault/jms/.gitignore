@@ -6,6 +6,7 @@
 .obsidian/cache
 .obsidian/app.json
 .obsidian/graph.json
+.obsidian/appearance.json
 
 # Community plugin settings are personal; plugin code (main.js, manifest.json,
 # styles.css) stays tracked for syncing across clones
@@ -13,4 +14,3 @@
 
 # Obsidian vault trash
 .trash
-

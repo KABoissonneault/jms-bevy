@@ -30,19 +30,12 @@ fn initialize_camera(mut commands: Commands) {
         BACKGROUND,
     ));
 
-    let main_camera = (
+    commands.spawn((
         MainCamera,
         Camera {
             order: 1,
             clear_color: ClearColorConfig::None,
             ..default()
         },
-    );
-
-    // In dev builds, the primary Egui context lives on this camera so the
-    // debug UI renders above everything it draws, including Bevy UI.
-    #[cfg(feature = "dev")]
-    let main_camera = (main_camera, bevy_egui::PrimaryEguiContext);
-
-    commands.spawn(main_camera);
+    ));
 }
