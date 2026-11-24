@@ -5,6 +5,7 @@ use bevy::prelude::*;
 mod components;
 mod movement;
 mod plugins;
+mod projection;
 mod resources;
 mod styles;
 mod third_party;
@@ -13,7 +14,7 @@ mod third_party;
 /// modules directly.
 mod prelude {
     pub use super::*;
-    pub use {components::*, movement::*, plugins::*, resources::*, styles::*};
+    pub use {components::*, movement::*, plugins::*, projection::*, resources::*, styles::*};
 }
 
 pub struct AppPlugin;
@@ -27,6 +28,7 @@ impl Plugin for AppPlugin {
             plugins::game::plugin,
             plugins::input::plugin,
             plugins::tiling::plugin,
+            plugins::entity::plugin,
         ));
 
         // Enable dev tools for dev builds.
