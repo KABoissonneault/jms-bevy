@@ -34,11 +34,13 @@ pub fn step_landing(storage: &HexStorage, from: GridPos, direction: Direction) -
         return Some(next_pos);
     }
     let base_layer = next_pos.layer;
-    if can_be_occupied(storage, next_pos.at_layer(base_layer - 1)) {
-        return Some(next_pos);
+    let down_pos = next_pos.at_layer(base_layer - 1);
+    if can_be_occupied(storage, down_pos) {
+        return Some(down_pos);
     }
-    if can_be_occupied(storage, next_pos.at_layer(base_layer + 1)) {
-        return Some(next_pos);
+    let up_pos = next_pos.at_layer(base_layer + 1);
+    if can_be_occupied(storage, up_pos) {
+        return Some(up_pos);
     }
     return None;
 }
