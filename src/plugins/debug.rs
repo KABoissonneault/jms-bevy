@@ -4,7 +4,7 @@ use bevy::diagnostic::{
     SystemInformationDiagnosticsPlugin,
 };
 use bevy::prelude::*;
-use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
+use bevy_egui::{EguiContexts, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, egui};
 use bevy_remote::{RemotePlugin, http::RemoteHttpPlugin};
 
 // Collects diagnostics and displays them in an egui window toggled with F1.
@@ -16,7 +16,14 @@ use bevy_remote::{RemotePlugin, http::RemoteHttpPlugin};
 pub(crate) struct ShowDiagnostics(bool);
 
 pub(crate) fn plugin(app: &mut App) {
-    app.add_plugins((
+    // bevy_egui attaches its context to the first camera spawned by default,
+    // which is the background camera here. The context is attached to the main
+    // camera in `plugins::camera` instead, so egui renders above gameplay.
+    app.insert_resource(EguiGlobalSettings {
+        auto_create_primary_context: false,
+        ..Default::default()
+    })
+    .add_plugins((
         EguiPlugin::default(),
         FrameTimeDiagnosticsPlugin::default(),
         EntityCountDiagnosticsPlugin::default(),
