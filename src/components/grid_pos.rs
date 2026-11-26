@@ -20,7 +20,7 @@ impl GridPos {
     pub const fn from_offset(col: i32, row: i32, layer: i32) -> Self {
         Self {
             col,
-            drow: 2 * row + (col & 1),
+            drow: 2 * row - (col & 1),
             layer,
         }
     }
