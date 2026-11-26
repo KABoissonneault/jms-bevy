@@ -22,9 +22,11 @@ pub struct AppPlugin;
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            plugins::defaults::plugin,
+            // After the default plugins: third-party crates register assets,
+            // which needs the asset server they set up.
             third_party::plugin,
             plugins::camera::plugin,
-            plugins::defaults::plugin,
             plugins::game::plugin,
             plugins::input::plugin,
             plugins::tiling::plugin,

@@ -11,7 +11,8 @@ then negated into world space. That frame was removed on purpose; do not
 reintroduce it or a `center.y - px.y` style flip.
 
 Authoritative sources: `src/components/tile.rs` (constants + mapping),
-`src/plugins/tiling.rs` (transform + render ordering),
+`src/plugins/tiling.rs` (transform + render ordering, Tiled tile → grid),
+`src/third_party/tiled.rs` (Tiled map loading),
 `doc/vault/jms/Tech Design/Tiling.md` (design authority; wiki format).
 
 ## 1. HexPos — game/grid coordinates
@@ -51,14 +52,33 @@ Screen conventions (deliberate choices, don't "fix" them):
 
 ```rust
 Transform::from_xyz(
-    px.x - center.x,
-    px.y - center.y + FLOOR_SPRITE_Y_OFFSET,
-    pos.z * LAYER_ORDER_STEP - pos.y * TILE_ORDER_Y_SCALE,
+    px.x,
+    px.y + atlas.sprite_y_offset,
+    get_coord_depth(game_pos),
 )
 ```
 
-`FLOOR_SPRITE_Y_OFFSET` (-6) is applied in world space, where negative = down:
-the 32x32 sprite cell hangs a 12 px foundation strip below the 20 px hexagon.
+`sprite_y_offset` is applied in world space, where negative = down: the
+square tile cell hangs a foundation strip below the 20 px hexagon. It is
+`-(cell_height - HEX_HEIGHT_PX) / 2`, per tileset (-6 for the 32x32 cells of
+`Tiling.md`).
+
+## 3. Tiled tile coordinates — map files
+
+Tiles come from Tiled maps (`assets/tiled/*.tmx`, loaded by
+`src/third_party/tiled.rs`). A Tiled tile `(x, y)` is only a map-file index;
+`tiling.rs`'s `tile_grid_pos` converts it to a `GridPos` before anything else:
+
+- Tiled's y points **down**, so rows are flipped: Tiled's first row is the
+  top of the map on screen (the highest world y).
+- Both axes are shifted to center the map on the world origin. The **column
+  shift must be even**: hex centers only exist where `col + drow` is even, so
+  an odd shift would put every tile off the lattice.
+- Tiled has no elevation: a tile layer's `offsety` stands in for the z layer,
+  in whole steps of `LAYER_STEP_Z` (`-11` px = z `+1`, since negative is up
+  on screen). Layers with other offsets are skipped with a warning.
+- Maps are "Hexagonal (Staggered)", stagger axis x, index odd, finite; other
+  layouts fail to load.
 
 ## Render ordering rules
 

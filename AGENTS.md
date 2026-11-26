@@ -6,4 +6,5 @@
 - Tech design documents are found under `**/doc/vault/jms/Tech Design` as *.md files
 - Changes should usually only be to code and code configuration files, and agent configuration. Changes to game assets or docs are not welcome unless strictly necessary.
 - No need to do git operations such as checkout, commit, or push. This is handled manually.
-- Features under the dev config do not need tests. Tests will only be run on the normal config.
+- Features under the dev config do not need tests. Tests will only be run on the normal config. 
+- Always think and reason in English, whatever the input language.

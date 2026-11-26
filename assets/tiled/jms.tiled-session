@@ -1,0 +1,34 @@
+{
+    "activeFile": "Test.tsx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "Test.tmx": {
+            "scale": 3.3841,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 345.1434650276292,
+                "y": 111.84657663780622
+            }
+        },
+        "Test.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "last.imagePath": "/home/kaboissonneault/Projects/jms-bevy/assets/sprites/tilemaps",
+    "map.lastUsedFormat": "tmx",
+    "map.orientation": "4",
+    "openFiles": [
+        "Test.tsx"
+    ],
+    "project": "jms.tiled-project",
+    "recentFiles": [
+        "Test.tsx",
+        "Test.tsx",
+        "Test.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx"
+}
