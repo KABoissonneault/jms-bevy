@@ -42,7 +42,7 @@ pub fn step_landing(storage: &HexStorage, from: GridPos, direction: Direction) -
     if can_be_occupied(storage, up_pos) {
         return Some(up_pos);
     }
-    return None;
+    None
 }
 
 /// Whether the hexagon at `pos` can be entered by `for_entity`
@@ -66,13 +66,11 @@ pub fn can_traverse(
     direction: Direction,
     tile_states: &Query<&TileState>,
 ) -> Option<GridPos> {
-    let Some(landing) = step_landing(storage, from, direction) else {
-        return None;
-    };
+    let landing = step_landing(storage, from, direction)?;
     if can_enter(storage, landing, tile_states) {
-        return Some(landing);
+        Some(landing)
     } else {
-        return None;
+        None
     }
 }
 
