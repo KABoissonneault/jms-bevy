@@ -7,23 +7,22 @@ use bevy::diagnostic::{
 };
 use bevy::ecs::schedule::ScheduleLabel;
 use bevy::prelude::*;
-use bevy::window::{
-    MonitorSelection, WindowCloseRequested, WindowPosition, WindowRef, WindowResolution,
-};
-use bevy_egui::{EguiContext, EguiContexts, EguiGlobalSettings, EguiPlugin, EguiSchedule, egui};
+use bevy::window::{WindowCloseRequested, WindowRef, WindowResolution};
+use bevy_egui::{EguiContext, EguiGlobalSettings, EguiPlugin, EguiSchedule, egui};
+use bevy_inspector_egui::{DefaultInspectorConfigPlugin, bevy_inspector};
 use bevy_remote::{RemotePlugin, http::RemoteHttpPlugin};
 
-// Collects diagnostics and displays them in an egui window toggled with F1.
-// This keeps the console output clear for warnings, errors, and important
-// event logging.
+// Dev-only debug tools, each shown as a tab of a separate OS "Debug" window
+// with its own egui context, toggled with F1:
+// - a diagnostics tab, which keeps the console output clear for warnings,
+//   errors, and important event logging;
+// - the `bevy-inspector-egui` world inspector, to browse and edit entities,
+//   resources, and assets at runtime.
 //
-// Debug UI never renders inside the main viewport: every debug tool draws
-// into a separate OS "Debug" window with its own egui context. F1 opens the
-// window when the first tool becomes visible; closing it hides every tool.
+// Debug UI never renders inside the main viewport.
 //
-// To add a future debug tool: give `ShowDebug` a visibility flag (include it
-// in `any_visible` and `hide_all`), toggle it from an `Update` system, and
-// draw its egui window from a system on `DebugWindowPass`.
+// To add a future debug tool: add a `DebugTool` variant and draw its tab
+// content in `show_debug_tools`.
 
 /// The schedule driving the egui context of the debug window. Each egui
 /// context must have its own unique pass schedule.
@@ -37,24 +36,32 @@ struct DebugWindow {
     camera: Entity,
 }
 
-/// Which debug tools are currently visible, plus the entities of the OS
-/// window hosting them.
-#[derive(Resource, Default)]
-pub(crate) struct ShowDebug {
-    diagnostics: bool,
-    window: Option<DebugWindow>,
+/// A debug tool displayed as a tab of the debug window.
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+enum DebugTool {
+    #[default]
+    Diagnostics,
+    WorldInspector,
 }
 
-impl ShowDebug {
-    /// Whether any debug tool wants the debug window open.
-    fn any_visible(&self) -> bool {
-        self.diagnostics
-    }
+impl DebugTool {
+    const ALL: [DebugTool; 2] = [DebugTool::Diagnostics, DebugTool::WorldInspector];
 
-    /// Hides every debug tool; called when the debug window is closed.
-    fn hide_all(&mut self) {
-        self.diagnostics = false;
+    fn title(self) -> &'static str {
+        match self {
+            DebugTool::Diagnostics => "Diagnostics",
+            DebugTool::WorldInspector => "World Inspector",
+        }
     }
+}
+
+/// Whether the debug window should be open, the tab it shows, plus the
+/// entities of the OS window hosting it.
+#[derive(Resource, Default)]
+pub(crate) struct ShowDebug {
+    open: bool,
+    tab: DebugTool,
+    window: Option<DebugWindow>,
 }
 
 pub(crate) fn plugin(app: &mut App) {
@@ -67,6 +74,8 @@ pub(crate) fn plugin(app: &mut App) {
     })
     .add_plugins((
         EguiPlugin::default(),
+        // Registers the reflection options and egui impls the inspector needs.
+        DefaultInspectorConfigPlugin,
         FrameTimeDiagnosticsPlugin::default(),
         EntityCountDiagnosticsPlugin::default(),
         SystemInformationDiagnosticsPlugin,
@@ -77,27 +86,23 @@ pub(crate) fn plugin(app: &mut App) {
     .add_systems(
         Update,
         (
-            toggle_diagnostics_window,
+            toggle_debug_window,
             handle_debug_window_close,
             sync_debug_window,
         )
             .chain(),
     )
-    .add_systems(DebugWindowPass, show_diagnostics_window);
+    .add_systems(DebugWindowPass, show_debug_tools);
 }
 
-/// F1 toggles the diagnostics tool.
-fn toggle_diagnostics_window(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut show_debug: ResMut<ShowDebug>,
-) {
+/// F1 toggles the debug window.
+fn toggle_debug_window(keyboard: Res<ButtonInput<KeyCode>>, mut show_debug: ResMut<ShowDebug>) {
     if keyboard.just_pressed(KeyCode::F1) {
-        show_debug.diagnostics = !show_debug.diagnostics;
+        show_debug.open = !show_debug.open;
     }
 }
 
-/// Hides every debug tool when the debug window is closed through the OS
-/// close button.
+/// Closes the debug window when it is closed through the OS close button.
 fn handle_debug_window_close(
     mut commands: Commands,
     mut close_requested: MessageReader<WindowCloseRequested>,
@@ -111,19 +116,14 @@ fn handle_debug_window_close(
             // request; only our camera needs to go.
             commands.entity(debug_window.camera).despawn();
             show_debug.window = None;
-            show_debug.hide_all();
+            show_debug.open = false;
         }
     }
 }
 
-/// Keeps the debug window open exactly while a debug tool is visible.
-///
-/// This runs in `Update` on purpose: the egui pass loop reads back the
-/// context entity after its schedule completes, so the context must not be
-/// despawned from within `DebugWindowPass`. Flag changes made there (e.g.
-/// through an egui close button) take effect on the next frame.
+/// Keeps the debug window open exactly while `ShowDebug::open` is set.
 fn sync_debug_window(mut commands: Commands, mut show_debug: ResMut<ShowDebug>) {
-    match (show_debug.any_visible(), show_debug.window) {
+    match (show_debug.open, show_debug.window) {
         (true, None) => open_debug_window(&mut commands, &mut show_debug),
         (false, Some(debug_window)) => {
             close_debug_window(&mut commands, &mut show_debug, debug_window)
@@ -132,28 +132,64 @@ fn sync_debug_window(mut commands: Commands, mut show_debug: ResMut<ShowDebug>) 
     }
 }
 
-/// Draws the diagnostics egui window inside the debug OS window.
-fn show_diagnostics_window(
-    mut show_debug: ResMut<ShowDebug>,
-    mut contexts: EguiContexts,
-    diagnostics: Res<DiagnosticsStore>,
-) -> Result {
-    let Some(debug_window) = show_debug.window else {
+/// Draws the debug window: a tab bar with one tab per tool, and the selected
+/// tool's content filling the rest of the window.
+///
+/// Takes the world exclusively: the world inspector browses and edits
+/// entities, resources, and assets directly, which requires `&mut World`.
+fn show_debug_tools(world: &mut World) -> Result {
+    let (tab, window) = {
+        let show_debug = world.resource::<ShowDebug>();
+        (show_debug.tab, show_debug.window)
+    };
+    let Some(debug_window) = window else {
         return Ok(());
     };
-    if !show_debug.diagnostics {
-        return Ok(());
-    }
 
-    let ctx = contexts.ctx_for_entity_mut(debug_window.camera)?;
-    let mut open = true;
-    egui::Window::new("Diagnostics")
-        .open(&mut open)
-        .show(ctx, |ui| diagnostics_grid(ui, &diagnostics));
-    if !open {
-        // Closed through the egui window's close button; the sync system
-        // closes the OS window once no tool is visible anymore.
-        show_debug.diagnostics = false;
+    // The egui context is a cheap handle: cloning it leaves the world free
+    // for the tools while the window is drawn.
+    let Some(ctx) = world
+        .get_entity_mut(debug_window.camera)?
+        .get_mut::<EguiContext>()
+        .map(|mut context| context.get_mut().clone())
+    else {
+        return Ok(());
+    };
+
+    // Panels are shown inside a root `Ui` spanning the viewport, as in
+    // bevy_egui's `side_panel` example.
+    let mut viewport_ui = egui::Ui::new(
+        ctx.clone(),
+        "debug_viewport".into(),
+        egui::UiBuilder::new()
+            .layer_id(egui::LayerId::background())
+            .max_rect(ctx.viewport_rect()),
+    );
+
+    let mut selected = tab;
+    egui::Panel::top("debug_tool_tabs").show(&mut viewport_ui, |ui| {
+        ui.horizontal(|ui| {
+            for tool in DebugTool::ALL {
+                if ui
+                    .add(egui::Button::selectable(selected == tool, tool.title()))
+                    .clicked()
+                {
+                    selected = tool;
+                }
+            }
+        });
+    });
+    egui::CentralPanel::default().show(&mut viewport_ui, |ui| match selected {
+        DebugTool::Diagnostics => {
+            let diagnostics = world.resource::<DiagnosticsStore>();
+            diagnostics_grid(ui, diagnostics);
+        }
+        DebugTool::WorldInspector => {
+            egui::ScrollArea::both().show(ui, |ui| bevy_inspector::ui_for_world(world, ui));
+        }
+    });
+    if selected != tab {
+        world.resource_mut::<ShowDebug>().tab = selected;
     }
 
     Ok(())
@@ -183,19 +219,16 @@ fn diagnostics_grid(ui: &mut egui::Ui, diagnostics: &DiagnosticsStore) {
         });
 }
 
-/// Spawns the debug OS window with its own egui context.
-///
-/// Note: on Wayland, compositor policy decides the placement of new windows,
-/// so the requested centered position may be ignored.
+/// Spawns the debug OS window with its own egui context, maximized.
 fn open_debug_window(commands: &mut Commands, show_debug: &mut ShowDebug) {
-    let window = commands
-        .spawn((Window {
-            title: "Debug".into(),
-            position: WindowPosition::Centered(MonitorSelection::Current),
-            resolution: WindowResolution::new(480, 320),
-            ..default()
-        },))
-        .id();
+    let mut window = Window {
+        title: "Debug".into(),
+        // Size restored when the window is un-maximized.
+        resolution: WindowResolution::new(960, 600),
+        ..default()
+    };
+    window.set_maximized(true);
+    let window = commands.spawn(window).id();
 
     let camera = commands
         .spawn((
