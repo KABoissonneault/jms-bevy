@@ -2,13 +2,15 @@
 
 use bevy::prelude::*;
 
-/// Grid position in "Doubled" coordinates. See https://www.redblobgames.com/grids/hexagons/#coordinates
-/// Each row adds two "drows", and odd columns are offset by 1 drow
-#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct GridPos {
-    pub col: i32,
-    pub drow: i32,
-    pub layer: i32,
+dev_reflect_component! {
+    /// Grid position in "Doubled" coordinates. See https://www.redblobgames.com/grids/hexagons/#coordinates
+    /// Each row adds two "drows", and odd columns are offset by 1 drow
+    #[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct GridPos {
+        pub col: i32,
+        pub drow: i32,
+        pub layer: i32,
+    }
 }
 
 impl GridPos {

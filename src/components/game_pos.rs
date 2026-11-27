@@ -14,15 +14,17 @@ const ODD_COLUMN_DY: i32 = 2;
 /// y delta between drow values
 const DROW_DY: i32 = 2;
 
-/// Position of a gameplay entity on the hex world, in the game coordinates
-/// of `Tiling.md`: (x, y) are in quarter-hex units (dx and dy) on the
-/// horizontal slice of the world, and z is the hex grid layer index.
-/// Hexagon centers and vertices are always aligned to an even y.
-#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct GamePos {
-    pub x: i32,
-    pub y: i32,
-    pub z: i32,
+dev_reflect_component! {
+    /// Position of a gameplay entity on the hex world, in the game coordinates
+    /// of `Tiling.md`: (x, y) are in quarter-hex units (dx and dy) on the
+    /// horizontal slice of the world, and z is the hex grid layer index.
+    /// Hexagon centers and vertices are always aligned to an even y.
+    #[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct GamePos {
+        pub x: i32,
+        pub y: i32,
+        pub z: i32,
+    }
 }
 
 impl GamePos {

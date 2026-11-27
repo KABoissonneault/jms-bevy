@@ -65,6 +65,10 @@ pub(crate) struct ShowDebug {
 }
 
 pub(crate) fn plugin(app: &mut App) {
+    // The world inspector can only show component fields for registered
+    // `Reflect` types; the derives are dev-only and live on the components.
+    crate::components::register_reflected(app);
+
     // bevy_egui attaches a context to the first camera spawned by default.
     // Debug UI must stay out of the main viewport, so no primary context is
     // created and the debug window's camera carries the only egui context.
