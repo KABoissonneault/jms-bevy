@@ -12,10 +12,12 @@
 //!
 //! - Tiled has no elevation, so a tile layer's vertical offset stands in for
 //!   the z layer it belongs to (see [`layer_z`]).
-//! - Tiled's y axis points down; the map is flipped and centered onto the
-//!   world origin (see [`tile_grid_pos`]).
+//! - Tiled's y axis points down; rows are flipped and the map is offset so
+//!   its middle tile is the world origin (see [`tile_grid_pos`]).
 //!
-//! Only tile layers are spawned; object, image and group layers are ignored.
+//! Tile layers spawn one tile entity each, and object layers spawn one entity
+//! per point object sitting on a hex center, named as in Tiled. Image and
+//! group layers, and objects of other shapes, are ignored.
 
 use bevy::{asset::AssetEvent, prelude::*};
 
@@ -24,6 +26,9 @@ use crate::third_party::tiled::TiledMap;
 
 /// The Tiled map spawned as the hex map.
 const TEST_MAP_PATH: &str = "tiled/Test.tmx";
+
+/// How far a Tiled point may sit from a hex center and still snap to it.
+const POINT_SNAP_PX: f32 = 1.0;
 
 /// One tileset of the loaded map, its image sliced into tile cells.
 struct TilesetAtlas {
@@ -55,6 +60,17 @@ struct MapTile {
     floor: u32,
 }
 
+/// A named point object of a Tiled map, placed on the grid.
+struct MapPoint {
+    name: String,
+    game_pos: GamePos,
+}
+
+/// Marks everything spawned from the map asset, so a reload can replace it
+/// all without touching entities the game spawned itself (the player).
+#[derive(Component, Default)]
+struct MapSpawned;
+
 pub(crate) fn plugin(app: &mut App) {
     app.insert_resource(HexStorage::default())
         .add_observer(on_insert_tile)
@@ -82,14 +98,34 @@ fn layer_z(offset_y: f32) -> Option<i32> {
 /// Grid cell of the tile at Tiled `(x, y)` in a map `width` by `height`
 /// tiles, on layer `z`.
 ///
-/// Rows are flipped, since Tiled's y points down and world +y is screen-up.
-/// Both axes are then shifted to center the map on the world origin. The
-/// column shift is even: hex centers only exist where `col + drow` is even,
-/// and an odd shift would move every tile off the lattice.
+/// Rows are flipped, since Tiled's y points down and world +y is screen-up,
+/// and the map is offset so its middle tile is the world origin. When the
+/// middle falls between two tiles (even width or height), the left column
+/// and the bottom row are the origin. The column origin then stays on an
+/// even column: the stagger has to keep matching Tiled's (odd columns
+/// shifted down), which an odd shift would flip.
 fn tile_grid_pos(x: i32, y: i32, z: i32, width: u32, height: u32) -> GridPos {
     let half_cols = (width as i32 / 2) & !1;
-    let half_rows = height as i32 / 2;
-    GridPos::from_offset(x - half_cols, half_rows - 1 - y, z)
+    GridPos::from_offset(x - half_cols, height as i32 / 2 - y, z)
+}
+
+/// Game position of a Tiled map point at pixel `(x, y)` on z layer `z`, when
+/// it sits on a hex center (within [`POINT_SNAP_PX`]).
+///
+/// Tile centers of the 32x20 tiles of `Tiling.md` sit `2*DX_PX +
+/// 3*DX_PX*column` px right and `2*DY_PX + 4*DY_PX*row + 2*DY_PX` px down for
+/// odd columns, from the map's top-left.
+fn point_game_pos(x: f32, y: f32, z: i32, width: u32, height: u32) -> Option<GamePos> {
+    let column = snap(x, 2.0 * DX_PX, 3.0 * DX_PX)?;
+    let row = snap(y, 2.0 * DY_PX * (1 + (column & 1)) as f32, 4.0 * DY_PX)?;
+    Some(GamePos::from(tile_grid_pos(column, row, z, width, height)))
+}
+
+/// The tile index at `value` px along one axis, when it sits on a center at
+/// `offset + index * spacing` within [`POINT_SNAP_PX`] pixels.
+fn snap(value: f32, offset: f32, spacing: f32) -> Option<i32> {
+    let index = ((value - offset) / spacing).round();
+    ((value - offset - index * spacing).abs() <= POINT_SNAP_PX).then_some(index as i32)
 }
 
 /// Every tile of `map` that gets spawned, layer by layer, top-left first:
@@ -124,6 +160,54 @@ fn map_tiles(map: &tiled::Map) -> impl Iterator<Item = MapTile> + '_ {
         .flatten()
 }
 
+/// Every point object of `map`'s visible object layers that sits on a hex
+/// center, named as in Tiled.
+fn map_points(map: &tiled::Map) -> impl Iterator<Item = MapPoint> + '_ {
+    map.layers()
+        .filter_map(move |layer| {
+            let Some(z) = layer_z(layer.offset_y) else {
+                warn!(
+                    "Skipping Tiled layer {:?}: offsety {} px is not a multiple of {} px",
+                    layer.name, layer.offset_y, HEX_Z_HEIGHT_OFFSET_PX
+                );
+                return None;
+            };
+            if layer.offset_x != 0.0 {
+                warn!(
+                    "Skipping Tiled layer {:?}: an offsetx of {} px cannot land on the hex lattice",
+                    layer.name, layer.offset_x
+                );
+                return None;
+            }
+            let objects = layer.as_object_layer()?;
+            layer.visible.then(|| {
+                objects.objects().filter_map(move |object| {
+                    if !matches!(object.shape, tiled::ObjectShape::Point(..)) {
+                        warn!(
+                            "Skipping Tiled object {:?}: only point objects are supported",
+                            object.name
+                        );
+                        return None;
+                    }
+                    let Some(game_pos) =
+                        point_game_pos(object.x, object.y, z, map.width, map.height)
+                    else {
+                        warn!(
+                            "Skipping Tiled point {:?}: not aligned with a hex center",
+                            object.name
+                        );
+                        return None;
+                    };
+                    Some(MapPoint {
+                        name: object.name.clone(),
+                        game_pos,
+                    })
+                })
+            })
+        })
+        .flatten()
+}
+
 /// Spawns the map's tiles once its asset reports loaded, and again whenever
 /// the map (or a tileset it reads) changes on disk, replacing the previous
 /// tiles. Scheduled on `Update` because the asset arrives a few frames after
@@ -149,7 +233,7 @@ fn spawn_map(
         return;
     };
 
-    commands.despawn_all::<With<Tile>>();
+    commands.despawn_all::<With<MapSpawned>>();
     for tileset in &hex_map.tilesets {
         layouts.remove(tileset.layout.id());
     }
@@ -182,6 +266,7 @@ fn spawn_map(
             Name::new("Tile"),
             tile.grid_pos,
             Tile,
+            MapSpawned,
             TileIndex { floor: tile.floor },
             Sprite {
                 image: tiled_map.tileset_image(tile.tileset).clone(),
@@ -198,6 +283,10 @@ fn spawn_map(
             ),
         ));
     }
+
+    for point in map_points(map) {
+        commands.spawn((Name::new(point.name), point.game_pos, MapSpawned));
+    }
 }
 
 #[cfg(test)]
@@ -211,7 +300,7 @@ mod tests {
     const MAP_SIZES: [(u32, u32); 4] = [(30, 20), (31, 20), (30, 21), (1, 1)];
 
     #[test]
-    fn tiled_tiles_land_on_hex_centers_whatever_the_map_size() {
+    fn tiled_tiles_land_on_hex_centers() {
         for (width, height) in MAP_SIZES {
             for y in 0..height as i32 {
                 for x in 0..width as i32 {
@@ -253,6 +342,29 @@ mod tests {
     }
 
     #[test]
+    fn the_middle_tile_is_the_world_origin() {
+        // For the even-sized test map, the origin is the left column and the
+        // bottom row of the middle: tile 14 of 0..29, row 10 of 0..19.
+        assert_eq!(
+            GamePos::from(tile_grid_pos(14, 10, 0, 30, 20)),
+            GamePos::new(0, 0, 0)
+        );
+        // The tile right of it steps one column right and, being an odd
+        // column in Tiled, half a tile down.
+        assert_eq!(
+            GamePos::from(tile_grid_pos(15, 10, 0, 30, 20)),
+            GamePos::new(3, -2, 0)
+        );
+        // Odd widths have a single middle column, but the column origin
+        // stays even to keep the stagger matching Tiled, so it centers one
+        // column left of the middle.
+        assert_eq!(
+            GamePos::from(tile_grid_pos(14, 10, 0, 31, 20)),
+            GamePos::new(0, 0, 0)
+        );
+    }
+
+    #[test]
     fn layers_rise_with_negative_offsets() {
         assert_eq!(layer_z(0.0), Some(0));
         assert_eq!(layer_z(-HEX_Z_HEIGHT_OFFSET_PX), Some(1));
@@ -260,6 +372,35 @@ mod tests {
         assert_eq!(layer_z(HEX_Z_HEIGHT_OFFSET_PX), Some(-1));
         // Between two layers: not a layer of the grid.
         assert_eq!(layer_z(-HEX_Z_HEIGHT_OFFSET_PX / 2.0), None);
+    }
+
+    #[test]
+    fn map_points_snap_to_hex_centers() {
+        // "Lower Left", on the map's bottom-left tile.
+        assert_eq!(
+            point_game_pos(16.0, 390.0, 0, 30, 20),
+            Some(GamePos::new(-42, -36, 0))
+        );
+        // Odd columns sit half a tile lower in Tiled: the tile right of the
+        // bottom-left one.
+        assert_eq!(
+            point_game_pos(40.0, 400.0, 0, 30, 20),
+            Some(GamePos::new(-39, -38, 0))
+        );
+        // One hex north of "Lower Left": north is up on screen, and world
+        // +y is up.
+        assert_eq!(
+            point_game_pos(16.0, 370.0, 0, 30, 20),
+            Some(GamePos::new(-42, -32, 0))
+        );
+        // A raised layer keeps the tile indexes; only z changes.
+        assert_eq!(
+            point_game_pos(328.0, 120.0, 1, 30, 20),
+            Some(GamePos::new(-3, 18, 1))
+        );
+        // Off the lattice: no position.
+        assert_eq!(point_game_pos(20.0, 390.0, 0, 30, 20), None);
+        assert_eq!(point_game_pos(16.0, 385.0, 0, 30, 20), None);
     }
 
     /// The tiles `TEST_MAP_PATH` should put on the grid, once it is loaded.
@@ -271,9 +412,27 @@ mod tests {
             .map(|map| map_tiles(map.map()).collect())
     }
 
+    /// The points `TEST_MAP_PATH` should place, once it is loaded.
+    fn expected_points(world: &World) -> Option<Vec<MapPoint>> {
+        let source = &world.resource::<HexMap>().source;
+        world
+            .resource::<Assets<TiledMap>>()
+            .get(source)
+            .map(|map| map_points(map.map()).collect())
+    }
+
+    /// The game positions the map has placed so far.
+    fn placed_points(world: &mut World) -> Vec<GamePos> {
+        world
+            .query_filtered::<&GamePos, With<MapSpawned>>()
+            .iter(world)
+            .copied()
+            .collect()
+    }
+
     /// Runs the app headless, loading and spawning the map, and hands it to
     /// `check` once `done` holds.
-    fn run_until(done: impl Fn(&World) -> bool, check: impl FnOnce(&World)) {
+    fn run_until(mut done: impl FnMut(&mut World) -> bool, check: impl FnOnce(&mut World)) {
         let mut app = App::new();
         app.add_plugins((MinimalPlugins, AssetPlugin::default()));
         // What the renderer's texture plugin sets up, minus the renderer.
@@ -289,24 +448,33 @@ mod tests {
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
         while std::time::Instant::now() < deadline {
             app.update();
-            if done(app.world()) {
-                check(app.world());
+            if done(app.world_mut()) {
+                check(app.world_mut());
                 return;
             }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
+        let tiles = expected_tiles(app.world());
+        let points = expected_points(app.world());
         panic!(
-            "{TEST_MAP_PATH} did not fully spawn: {} tiles on the grid",
-            app.world().resource::<HexStorage>().tile_count()
+            "{TEST_MAP_PATH} did not fully spawn: {} tiles on the grid ({:?} expected), {} points placed ({:?} expected)",
+            app.world().resource::<HexStorage>().tile_count(),
+            tiles.as_ref().map(|tiles| tiles.len()),
+            placed_points(app.world_mut()).len(),
+            points.as_ref().map(|points| points.len()),
         );
     }
 
     #[test]
-    fn spawns_every_tiled_tile_onto_the_grid() {
+    fn spawns_every_tiled_tile_and_point_onto_the_grid() {
         run_until(
             |world| {
                 expected_tiles(world)
                     .is_some_and(|tiles| world.resource::<HexStorage>().tile_count() == tiles.len())
+                    && expected_points(world).is_some_and(|points| {
+                        let placed = placed_points(world);
+                        points.iter().all(|point| placed.contains(&point.game_pos))
+                    })
             },
             |world| {
                 let storage = world.resource::<HexStorage>();
@@ -324,6 +492,18 @@ mod tests {
                             .get::<TileIndex>()
                             .map(|index| index.floor),
                         Some(tile.floor)
+                    );
+                }
+
+                // Every map point is placed, exactly once, at its position.
+                let points = expected_points(world).unwrap();
+                let placed = placed_points(world);
+                assert_eq!(placed.len(), points.len());
+                for point in &points {
+                    assert!(
+                        placed.contains(&point.game_pos),
+                        "no map point at {:?}",
+                        point.game_pos
                     );
                 }
             },

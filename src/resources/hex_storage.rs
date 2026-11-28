@@ -234,6 +234,23 @@ mod tests {
     }
 
     #[test]
+    fn odd_negative_drows_do_not_collide() {
+        // Odd columns carry negative odd drows, which a truncating `drow / 2`
+        // used to fold onto the even drow above them.
+        let mut storage = HexStorage::default();
+        let south = GridPos::from_offset(1, 0, 0); // drow -1
+        let base = GridPos::from_offset(1, 1, 0); // drow 1
+        let further = GridPos::from_offset(1, -1, 0); // drow -3
+        for (id, pos) in [(1, south), (2, base), (3, further)] {
+            storage.register_tile(entity(id), pos);
+        }
+        assert_eq!(storage.tile_at(south), Some(entity(1)));
+        assert_eq!(storage.tile_at(base), Some(entity(2)));
+        assert_eq!(storage.tile_at(further), Some(entity(3)));
+        assert_eq!(storage.tile_count(), 3);
+    }
+
+    #[test]
     fn observers_track_spawn_and_despawn() {
         let mut world = World::new();
         world.insert_resource(HexStorage::default());

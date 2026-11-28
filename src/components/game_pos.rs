@@ -103,19 +103,19 @@ mod tests {
         // ROW_DY apart, so every grid step lands on a neighboring hexagon.
         assert_eq!(
             GamePos::from_grid_offset(1, 0, 0),
-            GamePos::new(COLUMN_DX, ODD_COLUMN_DY, 0)
+            GamePos::new(COLUMN_DX, -ODD_COLUMN_DY, 0)
         );
         assert_eq!(
             GamePos::from_grid_offset(0, 1, 0),
             GamePos::new(0, ROW_DY, 0)
         );
         // The convention holds on the whole global grid: negative odd
-        // columns (`& 1` is never negative) are staggered up as well.
+        // columns (`& 1` is never negative) are staggered down as well.
         assert_eq!(
             GamePos::from_grid_offset(-1, 0, 0),
-            GamePos::new(-COLUMN_DX, ODD_COLUMN_DY, 0)
+            GamePos::new(-COLUMN_DX, -ODD_COLUMN_DY, 0)
         );
-        // Odd columns sit COLUMN_DY above the row line.
+        // Odd columns sit COLUMN_DY below the row line, like in Tiled.
         assert_eq!(
             GamePos::from_grid_offset(2, 0, 0),
             GamePos::new(2 * COLUMN_DX, 0, 0)

@@ -18,7 +18,7 @@ impl GridPos {
         Self { col, drow, layer }
     }
 
-    // From "offset" coordinates (ie: diff from origin)
+    /// From "offset" coordinates (ie: diff from origin)
     pub const fn from_offset(col: i32, row: i32, layer: i32) -> Self {
         Self {
             col,
@@ -27,8 +27,11 @@ impl GridPos {
         }
     }
 
+    /// The exact inverse of [`GridPos::from_offset`]: the `+ (col & 1)` is
+    /// what makes the division exact, so odd drows on odd columns (which are
+    /// negative) don't truncate onto the even drow below them.
     pub const fn to_offset(self) -> (i32, i32) {
-        (self.col, self.drow / 2)
+        (self.col, (self.drow + (self.col & 1)) / 2)
     }
 
     pub const fn at_layer(self, layer: i32) -> Self {

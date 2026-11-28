@@ -26,9 +26,10 @@ Key constants (all in `src/components/tile.rs`):
 - Neighbor steps: `COLUMN_DX` = 3, `COLUMN_DY` = 2, `ROW_DY` = 4
 - `LAYER_STEP_Z` = 11 px vertical distance between layers (doc calls it S)
 
-`HexPos::from_grid(col, row)` staggers odd columns by `+COLUMN_DY`, which renders
-as those columns sitting **above** the even-column row line (grid +y is
-screen-up; see below).
+`GamePos::from_grid` (via `GridPos::from_offset`) staggers odd columns by
+`-COLUMN_DY`, so those columns sit **below** the even-column row line on
+screen (grid +y is screen-up; see below) — mirroring Tiled's own odd-column
+down-shift, so a tile's GamePos matches where Tiled shows it.
 
 ## 2. Bevy world space — pixels
 
@@ -71,12 +72,19 @@ Tiles come from Tiled maps (`assets/tiled/*.tmx`, loaded by
 
 - Tiled's y points **down**, so rows are flipped: Tiled's first row is the
   top of the map on screen (the highest world y).
-- Both axes are shifted to center the map on the world origin. The **column
-  shift must be even**: hex centers only exist where `col + drow` is even, so
-  an odd shift would put every tile off the lattice.
-- Tiled has no elevation: a tile layer's `offsety` stands in for the z layer,
-  in whole steps of `LAYER_STEP_Z` (`-11` px = z `+1`, since negative is up
-  on screen). Layers with other offsets are skipped with a warning.
+- Rows are flipped (Tiled's y points down) and the map is offset so its
+  middle tile is GamePos (0, 0, 0). When the middle falls between two tiles
+  (even width/height), the **left column / bottom row** is the origin. The
+  column origin stays on an even column — an odd shift flips the stagger
+  against Tiled and shears the map — so odd widths center one column left.
+- Tiled has no elevation: a layer's `offsety` stands in for the z layer, in
+  whole steps of `LAYER_STEP_Z` (`-11` px = z `+1`, since negative is up on
+  screen). Layers with other offsets are skipped with a warning.
+- Point objects on object layers become entities with the object's `Name` and
+  a `GamePos` (`tiling.rs`'s `point_game_pos` snaps the map pixel to a tile
+  center within 1 px; off-lattice points are skipped with a warning). Points
+  convert like tiles: the raw pixel maps to the z=0 tile index, and the
+  layer's `offsety` supplies the z.
 - Maps are "Hexagonal (Staggered)", stagger axis x, index odd, finite; other
   layouts fail to load.
 
@@ -98,8 +106,11 @@ Tiles come from Tiled maps (`assets/tiled/*.tmx`, loaded by
 - Grid +y is the opposite of image/atlas row order (atlas indices still traverse
   top-left, row by row downward). Grid direction and image direction are
   unrelated.
-- Test comments in `tile.rs` describe directions in screen terms ("above the row
-  line"); keep them consistent if you touch the stagger.
+- Test comments in `game_pos.rs` describe directions in screen terms ("below
+  the row line"); keep them consistent if you touch the stagger.
+- `GridPos::to_offset` must stay the exact inverse of `from_offset`: the
+  `+ (col & 1)` before the division keeps negative odd drows from truncating
+  onto the even drow above them (they would collide in `HexStorage`).
 
 If conventions ever change, update together: `pixel_pos` and its doc comment,
 the transform/depth term in `tiling.rs`, the `tile.rs` tests, and reflect the
